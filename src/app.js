@@ -9,10 +9,29 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+/**
+ * ✅ CORS CONFIGURATION (IMPORTANT)
+ */
+const corsOptions = {
+  origin: ['http://localhost:5173'], // frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+/**
+ * ✅ MIDDLEWARES
+ */
 app.use(express.json());
 
-// Routes
+/**
+ * ✅ ROUTES
+ */
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
@@ -22,9 +41,11 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/seats', require('./routes/seatRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 
+/**
+ * ✅ BACKGROUND JOB (Seat Hold Release)
+ */
 const { releaseExpiredHolds } = require('./services/seatAllocationService');
 
-// Run every 2 minutes to release expired seat holds
 setInterval(async () => {
   try {
     const released = await releaseExpiredHolds();
@@ -36,12 +57,16 @@ setInterval(async () => {
   }
 }, 2 * 60 * 1000);
 
-// Health check
+/**
+ * ✅ HEALTH CHECK
+ */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Error handler
+/**
+ * ✅ ERROR HANDLER (MUST BE LAST)
+ */
 app.use(errorMiddleware);
 
 module.exports = app;
