@@ -17,12 +17,31 @@ exports.createEvent = async (req, res, next) => {
       tags,
       status,
       price,
+      venueType,
+      requiresSeatSelection,
     } = req.body;
 
-    const startTime = new Date(`${date}T${time || '00:00'}`);
+    // Basic presence validation for required fields
+    if (!date || !time) {
+      return res.status(400).json({ message: 'Start date and time are required' });
+    }
+
+    const startTime = new Date(`${date}T${time}`);
     const finalEndDate = endDate || date;
-    const finalEndTime = endTime || time || '00:00';
+    const finalEndTime = endTime || time;
     const parsedEndTime = new Date(`${finalEndDate}T${finalEndTime}`);
+
+    if (Number.isNaN(startTime.getTime()) || Number.isNaN(parsedEndTime.getTime())) {
+      return res.status(400).json({ message: 'Invalid start or end date/time' });
+    }
+
+    if (parsedEndTime <= startTime) {
+      return res
+        .status(400)
+        .json({ message: 'End date/time must be after start date/time' });
+    }
+
+    const finalVenueType = venueType || (requiresSeatSelection ? 'indoor' : 'outdoor');
 
     const event = await Event.create({
       name: title,
@@ -32,6 +51,7 @@ exports.createEvent = async (req, res, next) => {
       city,
       image: bannerUrl,
       price: price || 0,
+      venueType: finalVenueType,
       startTime,
       endTime: parsedEndTime,
       capacity,
@@ -80,6 +100,8 @@ exports.updateEvent = async (req, res, next) => {
       tags,
       status,
       price,
+      venueType,
+      requiresSeatSelection,
     } = req.body;
 
     const update = {};
@@ -93,12 +115,36 @@ exports.updateEvent = async (req, res, next) => {
     if (capacity !== undefined) update.capacity = capacity;
     if (tags !== undefined) update.tags = Array.isArray(tags) ? tags : [];
     if (status !== undefined) update.status = status;
-
-    if (date && time) {
-      update.startTime = new Date(`${date}T${time}`);
+    if (venueType !== undefined) update.venueType = venueType;
+    if (requiresSeatSelection !== undefined && venueType === undefined) {
+      update.venueType = requiresSeatSelection ? 'indoor' : 'outdoor';
     }
-    if (endDate && (endTime || time)) {
-      update.endTime = new Date(`${endDate}T${endTime || time}`);
+
+    // If any date/time related fields are provided, recompute and validate
+    if (date || time || endDate || endTime) {
+      if (!date || !time) {
+        return res
+          .status(400)
+          .json({ message: 'Start date and time are required when updating' });
+      }
+
+      const startTime = new Date(`${date}T${time}`);
+      const finalEndDate = endDate || date;
+      const finalEndTime = endTime || time;
+      const parsedEndTime = new Date(`${finalEndDate}T${finalEndTime}`);
+
+      if (Number.isNaN(startTime.getTime()) || Number.isNaN(parsedEndTime.getTime())) {
+        return res.status(400).json({ message: 'Invalid start or end date/time' });
+      }
+
+      if (parsedEndTime <= startTime) {
+        return res
+          .status(400)
+          .json({ message: 'End date/time must be after start date/time' });
+      }
+
+      update.startTime = startTime;
+      update.endTime = parsedEndTime;
     }
 
     const event = await Event.findByIdAndUpdate(req.params.id, update, { new: true });

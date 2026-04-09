@@ -19,6 +19,22 @@ app.use('/api/tickets', require('./routes/ticketRoutes'));
 app.use('/api/checkin', require('./routes/checkinRoutes'));
 app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/seats', require('./routes/seatRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+
+const { releaseExpiredHolds } = require('./services/seatAllocationService');
+
+// Run every 2 minutes to release expired seat holds
+setInterval(async () => {
+  try {
+    const released = await releaseExpiredHolds();
+    if (released > 0) {
+      console.log(`Released ${released} expired seat hold(s)`);
+    }
+  } catch (err) {
+    console.error('Auto-release error:', err);
+  }
+}, 2 * 60 * 1000);
 
 // Health check
 app.get('/health', (req, res) => {

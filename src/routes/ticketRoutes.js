@@ -5,5 +5,6 @@ const authMiddleware = require('../middlewares/authMiddleware');
 
 router.post('/', authMiddleware, ticketController.createTicket);
 router.get('/event/:eventId', authMiddleware, ticketController.getTicketsByEvent);
+router.patch('/:id/checkin', authMiddleware, ticketController.updateCheckInStatus);
 
 module.exports = router;

@@ -9,6 +9,11 @@ const eventSchema = new mongoose.Schema(
     category: { type: String },
     image: { type: String },
     price: { type: Number, default: 0 },
+    venueType: {
+      type: String,
+      enum: ['indoor', 'outdoor'],
+      default: 'outdoor',
+    },
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     capacity: { type: Number },
