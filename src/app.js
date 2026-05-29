@@ -13,7 +13,7 @@ const app = express();
  * ✅ CORS CONFIGURATION (IMPORTANT)
  */
 const corsOptions = {
-  origin: ['http://localhost:5173'], // frontend URL
+  origin: ['http://localhost:5173', 'https://event-management-frontend-tau.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 };
